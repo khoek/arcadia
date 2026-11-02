@@ -20,7 +20,6 @@ const MAX_IAP_KEYS: usize = 16;
 
 #[derive(Clone)]
 pub(crate) struct ArcadiaIapAuth {
-    pub(crate) user_id: Arc<str>,
     verifier: Arc<IapVerifier>,
 }
 
@@ -32,13 +31,7 @@ impl ArcadiaIapAuth {
         let audience = audience
             .into_string()
             .map_err(|_| anyhow::anyhow!("ARCADIA_IAP_AUDIENCE must be valid UTF-8"))?;
-        let user_id = env::var("ARCADIA_IAP_USER_ID")?;
-        anyhow::ensure!(
-            !user_id.is_empty() && !user_id.contains('/'),
-            "ARCADIA_IAP_USER_ID is invalid"
-        );
         Ok(Some(Self {
-            user_id: Arc::from(user_id),
             verifier: Arc::new(IapVerifier::open(audience).await?),
         }))
     }
@@ -281,7 +274,9 @@ mod tests {
     #[test]
     fn iap_audience_and_assertion_envelope_are_strictly_validated() {
         assert!(valid_backend_service_audience(AUDIENCE));
-        assert!(!valid_backend_service_audience("https://arcadia.example.invalid"));
+        assert!(!valid_backend_service_audience(
+            "https://arcadia.example.invalid"
+        ));
         assert!(valid_assertion_envelope("header.payload.signature"));
         assert!(!valid_assertion_envelope("header.payload"));
         assert!(!valid_assertion_envelope("header.payload.signature!"));

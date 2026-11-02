@@ -47,13 +47,14 @@ route that prefix to the Firebase or Cloud Storage frontend. The API remains at
 Create the Firestore `v2/arcadia` configuration document with an HTTPS
 `origin` and a random `session.pepper`, plus a `v2/auth/users/<id>` document
 containing `id`, `email`, `disabled: false`, and `session_version: 0`. The
-`<id>` must match `ARCADIA_IAP_USER_ID`. Then deploy the API:
+Each admitted IAP email needs one `v2/auth/users/<id>` document with the same
+`email` value. Document IDs are instance-local and may be chosen by the
+deployer. Then deploy the API:
 
 ```sh
 export GOOGLE_CLOUD_PROJECT=your-project
 export FIRESTORE_DATABASE_ID=your-firestore-database
 export ARCADIA_IAP_AUDIENCE=/projects/PROJECT_NUMBER/global/backendServices/API_BACKEND_SERVICE_ID
-export ARCADIA_IAP_USER_ID=your-firestore-user-id
 ./deploy/cloud-run.sh
 ```
 

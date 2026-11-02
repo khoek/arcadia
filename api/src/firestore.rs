@@ -103,14 +103,27 @@ pub(crate) fn arcadia_parent(db: &FirestoreDb) -> anyhow::Result<String> {
     ))
 }
 
-pub(crate) async fn load_user_by_id(db: &Db, id: &str) -> anyhow::Result<Option<UserRecord>> {
-    Ok(get_stored_obj_at_if_exists(
-        db.inner(),
-        &auth_parent(db.inner())?,
-        AUTH_USERS_COLLECTION,
-        id,
-    )
-    .await?)
+pub(crate) async fn load_user_by_email(db: &Db, email: &str) -> anyhow::Result<Option<UserRecord>> {
+    let users = db
+        .inner()
+        .fluent()
+        .select()
+        .from(AUTH_USERS_COLLECTION)
+        .parent(&auth_parent(db.inner())?)
+        .query()
+        .await?;
+    let matches = users
+        .iter()
+        .map(deserialize_stored_document::<UserRecord>)
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .filter(|user| user.email == email)
+        .collect::<Vec<_>>();
+    anyhow::ensure!(
+        matches.len() <= 1,
+        "multiple Arcadia users are configured for the same email"
+    );
+    Ok(matches.into_iter().next())
 }
 
 fn normalized_text(value: Option<&String>) -> Option<&str> {

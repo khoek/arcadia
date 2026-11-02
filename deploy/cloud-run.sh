@@ -5,7 +5,6 @@ set -euo pipefail
 : "${ARCADIA_REGION:=us-central1}"
 : "${ARCADIA_SERVICE:=arcadia-api}"
 : "${ARCADIA_IAP_AUDIENCE:?Set ARCADIA_IAP_AUDIENCE after creating the IAP API backend}"
-: "${ARCADIA_IAP_USER_ID:?Set ARCADIA_IAP_USER_ID to the Firestore auth user document id}"
 
 gcloud run deploy "${ARCADIA_SERVICE}" \
   --project="${GOOGLE_CLOUD_PROJECT}" \
@@ -15,5 +14,5 @@ gcloud run deploy "${ARCADIA_SERVICE}" \
   --allow-unauthenticated \
   --ingress=all \
   --port=8080 \
-  --set-env-vars="ARCADIA_IAP_AUDIENCE=${ARCADIA_IAP_AUDIENCE},ARCADIA_IAP_USER_ID=${ARCADIA_IAP_USER_ID}" \
+  --set-env-vars="ARCADIA_IAP_AUDIENCE=${ARCADIA_IAP_AUDIENCE}" \
   --quiet

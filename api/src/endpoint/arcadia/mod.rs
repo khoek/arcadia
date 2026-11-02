@@ -67,7 +67,7 @@ impl ArcadiaState {
             tracing::warn!(error = ?error, "Arcadia IAP assertion rejected");
             ApiError::Unauthorized("authentication required".into())
         })?;
-        let Some(user) = load_arcadia_user(&self.db, &iap.user_id)
+        let Some(user) = load_arcadia_user(&self.db, &identity.email)
             .await
             .map_err(ApiError::Internal)?
         else {
