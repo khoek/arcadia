@@ -51,6 +51,7 @@ containing `id`, `email`, `disabled: false`, and `session_version: 0`. The
 
 ```sh
 export GOOGLE_CLOUD_PROJECT=your-project
+export FIRESTORE_DATABASE_ID=your-firestore-database
 export ARCADIA_IAP_AUDIENCE=/projects/PROJECT_NUMBER/global/backendServices/API_BACKEND_SERVICE_ID
 export ARCADIA_IAP_USER_ID=your-firestore-user-id
 ./deploy/cloud-run.sh
