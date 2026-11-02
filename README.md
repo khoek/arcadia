@@ -49,7 +49,9 @@ Create the Firestore `v2/arcadia` configuration document with an HTTPS
 containing `id`, `email`, `disabled: false`, and `session_version: 0`. The
 Each admitted IAP email needs one `v2/auth/users/<id>` document with the same
 `email` value. Document IDs are instance-local and may be chosen by the
-deployer. Then deploy the API:
+deployer. For a shared vault, set `ARCADIA_SHARED_USER_ID` to one enabled user
+document instead; every IAP-admitted account then reads and writes that same
+user scope. Then deploy the API:
 
 ```sh
 export GOOGLE_CLOUD_PROJECT=your-project

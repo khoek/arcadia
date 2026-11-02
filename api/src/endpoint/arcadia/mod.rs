@@ -7,7 +7,7 @@ mod vault;
 use crate::{
     arcadia::{ARCADIA_DATABASES, ArcadiaDatabases, ReorderError, load_arcadia_user},
     config::ArcadiaConfig,
-    firestore::Db,
+    firestore::{Db, load_user_by_id},
     path,
 };
 use axum::{
@@ -67,13 +67,18 @@ impl ArcadiaState {
             tracing::warn!(error = ?error, "Arcadia IAP assertion rejected");
             ApiError::Unauthorized("authentication required".into())
         })?;
-        let Some(user) = load_arcadia_user(&self.db, &identity.email)
-            .await
-            .map_err(ApiError::Internal)?
-        else {
+        let user = match &iap.shared_user_id {
+            Some(user_id) => load_user_by_id(&self.db, user_id)
+                .await
+                .map_err(ApiError::Internal)?,
+            None => load_arcadia_user(&self.db, &identity.email)
+                .await
+                .map_err(ApiError::Internal)?,
+        };
+        let Some(user) = user else {
             return Err(ApiError::Unauthorized("authentication required".into()));
         };
-        if user.disabled || user.email != identity.email {
+        if user.disabled || (iap.shared_user_id.is_none() && user.email != identity.email) {
             return Err(ApiError::Unauthorized("authentication required".into()));
         }
         Ok(ArcadiaUser {

@@ -103,6 +103,16 @@ pub(crate) fn arcadia_parent(db: &FirestoreDb) -> anyhow::Result<String> {
     ))
 }
 
+pub(crate) async fn load_user_by_id(db: &Db, id: &str) -> anyhow::Result<Option<UserRecord>> {
+    Ok(get_stored_obj_at_if_exists(
+        db.inner(),
+        &auth_parent(db.inner())?,
+        AUTH_USERS_COLLECTION,
+        id,
+    )
+    .await?)
+}
+
 pub(crate) async fn load_user_by_email(db: &Db, email: &str) -> anyhow::Result<Option<UserRecord>> {
     let users = db
         .inner()

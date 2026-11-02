@@ -20,6 +20,7 @@ const MAX_IAP_KEYS: usize = 16;
 
 #[derive(Clone)]
 pub(crate) struct ArcadiaIapAuth {
+    pub(crate) shared_user_id: Option<Arc<str>>,
     verifier: Arc<IapVerifier>,
 }
 
@@ -31,7 +32,19 @@ impl ArcadiaIapAuth {
         let audience = audience
             .into_string()
             .map_err(|_| anyhow::anyhow!("ARCADIA_IAP_AUDIENCE must be valid UTF-8"))?;
+        let shared_user_id = env::var("ARCADIA_SHARED_USER_ID")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .map(|value| {
+                anyhow::ensure!(
+                    !value.contains('/') && value == value.trim(),
+                    "ARCADIA_SHARED_USER_ID is invalid"
+                );
+                Ok::<Arc<str>, anyhow::Error>(Arc::from(value))
+            })
+            .transpose()?;
         Ok(Some(Self {
+            shared_user_id,
             verifier: Arc::new(IapVerifier::open(audience).await?),
         }))
     }
