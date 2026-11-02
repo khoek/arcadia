@@ -2,7 +2,6 @@
 FROM rust:1.99-bookworm AS builder
 WORKDIR /workspace/api
 COPY api/Cargo.toml api/Cargo.lock ./
-COPY api/crates ./crates
 COPY api/src ./src
 RUN cargo build --release --locked --bin arcadia-api
 
