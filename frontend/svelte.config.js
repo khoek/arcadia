@@ -6,6 +6,9 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		adapter: adapter(),
+		paths: {
+			base: process.env.PUBLIC_ARCADIA_BASE ?? '',
+		},
 		csp: {
 			mode: 'hash',
 			directives: {

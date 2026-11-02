@@ -72,7 +72,7 @@ pub async fn bootstrap_config(db: &Db) -> anyhow::Result<()> {
             return Ok(());
         }
         let stored = StoredArcadiaConfig {
-            origin: Some("https://arcadia.example.com".into()),
+            origin: Some("https://arcadia.example.invalid".into()),
             session: Some(StoredSessionConfig {
                 pepper: Some(crate::util::random_urlsafe_string(64)),
                 absolute_ttl_seconds: Some(43_200),
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn arcadia_config_requires_https_origin() {
         let stored = StoredArcadiaConfig {
-            origin: Some("http://arcadia.example.com".into()),
+            origin: Some("http://arcadia.example.invalid".into()),
             session: Some(StoredSessionConfig {
                 pepper: Some("x".repeat(64)),
                 ..Default::default()

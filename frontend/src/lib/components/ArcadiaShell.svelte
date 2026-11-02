@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { base } from '$app/paths';
 	import { Power } from '@lucide/svelte';
 
 	import { navigationItemIsActive, navigationItems } from '$lib/navigation';
@@ -28,7 +29,7 @@
 	<div class="identity">
 		<a
 			class="brand"
-			href="/home"
+			href={`${base}/home`}
 			aria-label={`Arcadia for ${session.user.email}`}
 		>
 			<strong>Arcadia</strong>

@@ -10,7 +10,6 @@ use tokio::sync::{Mutex, RwLock};
 
 const IAP_ISSUER: &str = "https://cloud.google.com/iap";
 const IAP_JWKS_URL: &str = "https://www.gstatic.com/iap/verify/public_key-jwk";
-const IAP_ALLOWED_EMAIL: &str = "keeley.hoek@gmail.com";
 const IAP_CLOCK_SKEW: Duration = Duration::from_secs(30);
 const IAP_MAX_TOKEN_LIFETIME: Duration = Duration::from_secs(11 * 60);
 const IAP_KEY_CACHE_LIFETIME: Duration = Duration::from_secs(60 * 60);
@@ -181,10 +180,6 @@ fn validate_claims(claims: &IapClaims, audience: &str) -> anyhow::Result<IapIden
         lifetime <= IAP_MAX_TOKEN_LIFETIME.as_secs(),
         "IAP assertion lifetime is too long"
     );
-    anyhow::ensure!(
-        claims.email == IAP_ALLOWED_EMAIL,
-        "IAP identity is not authorized"
-    );
     Ok(IapIdentity {
         email: claims.email.clone(),
         expires_unix: i64::try_from(claims.exp)?,
@@ -266,7 +261,7 @@ fn valid_key_id(kid: &str) -> bool {
 mod tests {
     use super::*;
 
-    const AUDIENCE: &str = "/projects/929381806881/global/backendServices/8932150910495905351";
+    const AUDIENCE: &str = "/projects/123456789/global/backendServices/987654321";
 
     fn claims(email: &str) -> IapClaims {
         let now = SystemTime::now()
@@ -286,20 +281,20 @@ mod tests {
     #[test]
     fn iap_audience_and_assertion_envelope_are_strictly_validated() {
         assert!(valid_backend_service_audience(AUDIENCE));
-        assert!(!valid_backend_service_audience("https://arcadia.hoek.io"));
+        assert!(!valid_backend_service_audience("https://arcadia.example.invalid"));
         assert!(valid_assertion_envelope("header.payload.signature"));
         assert!(!valid_assertion_envelope("header.payload"));
         assert!(!valid_assertion_envelope("header.payload.signature!"));
     }
 
     #[test]
-    fn iap_claims_require_the_configured_email_and_audience() {
-        let identity = validate_claims(&claims(IAP_ALLOWED_EMAIL), AUDIENCE).unwrap();
-        assert_eq!(identity.email, IAP_ALLOWED_EMAIL);
-        assert!(validate_claims(&claims("other@example.com"), AUDIENCE).is_err());
+    fn iap_claims_preserve_identity_and_require_the_configured_audience() {
+        let identity = validate_claims(&claims("operator@example.com"), AUDIENCE).unwrap();
+        assert_eq!(identity.email, "operator@example.com");
+        assert!(validate_claims(&claims("another-operator@example.com"), AUDIENCE).is_ok());
         assert!(
             validate_claims(
-                &claims(IAP_ALLOWED_EMAIL),
+                &claims("operator@example.com"),
                 "/projects/1/global/backendServices/2"
             )
             .is_err()

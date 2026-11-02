@@ -15,8 +15,10 @@ Google IAP → HTTPS load balancer → Firebase Hosting (frontend)
 
 IAP is the only browser authentication boundary. There is no application OAuth
 flow. The API verifies IAP's signed JWT, checks the configured audience, and
-admits only the configured Firestore user. Password and card values stay in
-Firestore; no secret values belong in this repository.
+admits only the configured Firestore user. The user identity is read from that
+user document, so the same image can serve any Google account and project.
+Password and card values stay in Firestore; no secret values belong in this
+repository.
 
 ## Local checks
 
@@ -37,6 +39,11 @@ backend policy granting `roles/iap.httpsResourceAccessor` to the one Google
 account that should use the vault. Configure the load balancer so the frontend
 backend serves `/` and the API backend serves `/v2/arcadia/*`.
 
+The frontend can be served at the host root or below a shared host path. For a
+path such as `/arcadia`, set `PUBLIC_ARCADIA_BASE=/arcadia` before building and
+route that prefix to the Firebase or Cloud Storage frontend. The API remains at
+`/v2/arcadia/*` on the same host.
+
 Create the Firestore `v2/arcadia` configuration document with an HTTPS
 `origin` and a random `session.pepper`, plus a `v2/auth/users/<id>` document
 containing `id`, `email`, `disabled: false`, and `session_version: 0`. The
@@ -49,11 +56,13 @@ export ARCADIA_IAP_USER_ID=your-firestore-user-id
 ./deploy/cloud-run.sh
 ```
 
-Deploy the frontend to the Firebase Hosting site attached to the load balancer:
+Deploy the frontend to the Firebase Hosting site attached to the load balancer.
+The repository intentionally does not select a Firebase site; pass the site ID
+chosen by the deployer:
 
 ```sh
 firebase use your-project
-firebase deploy --only hosting
+firebase deploy --only hosting:SITE_ID
 ```
 
 The public repository deliberately leaves project IDs, domains, IAP audiences,

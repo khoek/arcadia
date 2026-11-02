@@ -1,26 +1,27 @@
 import { CreditCard, House, LockKeyhole, ShieldCheck } from '@lucide/svelte';
+import { base } from '$app/paths';
 
 export const navigationItems = [
 	{
-		href: '/home',
+		href: `${base}/home`,
 		label: 'Home',
 		icon: House,
 		section: null,
 	},
 	{
-		href: '/authenticator',
+		href: `${base}/authenticator`,
 		label: 'Authenticator',
 		icon: ShieldCheck,
 		section: 'Vault',
 	},
 	{
-		href: '/vault',
+		href: `${base}/vault`,
 		label: 'Passwords',
 		icon: LockKeyhole,
 		section: 'Vault',
 	},
 	{
-		href: '/cards',
+		href: `${base}/cards`,
 		label: 'Cards',
 		icon: CreditCard,
 		section: 'Vault',
