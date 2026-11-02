@@ -3,25 +3,25 @@ import { base } from '$app/paths';
 
 export const navigationItems = [
 	{
-		href: `${base}/home`,
+		href: `${base}/home/`,
 		label: 'Home',
 		icon: House,
 		section: null,
 	},
 	{
-		href: `${base}/authenticator`,
+		href: `${base}/authenticator/`,
 		label: 'Authenticator',
 		icon: ShieldCheck,
 		section: 'Vault',
 	},
 	{
-		href: `${base}/vault`,
+		href: `${base}/vault/`,
 		label: 'Passwords',
 		icon: LockKeyhole,
 		section: 'Vault',
 	},
 	{
-		href: `${base}/cards`,
+		href: `${base}/cards/`,
 		label: 'Cards',
 		icon: CreditCard,
 		section: 'Vault',

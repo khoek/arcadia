@@ -29,7 +29,7 @@
 	<div class="identity">
 		<a
 			class="brand"
-			href={`${base}/home`}
+			href={`${base}/home/`}
 			aria-label={`Arcadia for ${session.user.email}`}
 		>
 			<strong>Arcadia</strong>

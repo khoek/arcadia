@@ -10,7 +10,7 @@
 	<p class="error-code">{page.status}</p>
 	<h1>Something went wrong</h1>
 	<p>{page.error?.message ?? 'The requested page could not be loaded.'}</p>
-	<a class="arcadia-button" href={`${base}/home`}>Return to Home</a>
+	<a class="arcadia-button" href={`${base}/home/`}>Return to Home</a>
 </Panel>
 
 <style>
