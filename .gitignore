@@ -1,0 +1,11 @@
+node_modules/
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+frontend/.firebase/
+api/target/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store

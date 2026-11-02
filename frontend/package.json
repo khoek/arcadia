@@ -1,0 +1,42 @@
+{
+	"name": "@arcadia/web",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "svelte-kit sync && vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write ."
+	},
+	"dependencies": {
+		"@arcadia/ui": "*",
+		"@lucide/svelte": "^1.31.0",
+		"@sveltejs/adapter-static": "^3.0.10",
+		"svelte-dnd-action": "^0.9.78"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.39.1",
+		"@sveltejs/kit": "^2.53.4",
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@tailwindcss/vite": "^4.1.17",
+		"@typescript-eslint/eslint-plugin": "^8",
+		"@typescript-eslint/parser": "^8",
+		"eslint": "^9",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3",
+		"globals": "^16.5.0",
+		"prettier": "^3",
+		"prettier-plugin-svelte": "^3",
+		"svelte": "^5.53.7",
+		"svelte-check": "^4",
+		"svelte-eslint-parser": "^1",
+		"tailwindcss": "^4.1.17",
+		"tslib": "^2.8.1",
+		"typescript": "^5.9.3",
+		"vite": "^7"
+	}
+}

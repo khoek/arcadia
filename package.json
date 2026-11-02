@@ -1,0 +1,30 @@
+{
+  "name": "@arcadia/root",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "frontend/packages/*"
+  ],
+  "scripts": {
+    "check": "npm run check --workspace @arcadia/web",
+    "lint": "npm run lint --workspace @arcadia/web",
+    "build": "npm run build --workspace @arcadia/web"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.53.4",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@tailwindcss/vite": "^4.1.17",
+    "eslint": "^9",
+    "prettier": "^3",
+    "svelte": "^5.53.7",
+    "svelte-check": "^4",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vite": "^7"
+  }
+}

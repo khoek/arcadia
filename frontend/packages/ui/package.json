@@ -1,0 +1,17 @@
+{
+	"name": "@arcadia/ui",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"svelte": "./src/index.ts",
+	"exports": {
+		".": {
+			"svelte": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./theme.css": "./src/theme.css"
+	},
+	"peerDependencies": {
+		"svelte": "^5.53.7"
+	}
+}

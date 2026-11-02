@@ -1,0 +1,14 @@
+pub const ARCADIA_SESSION: &str = "/arcadia/session";
+pub const ARCADIA_AUTHENTICATORS: &str = "/arcadia/authenticators";
+pub const ARCADIA_AUTHENTICATOR: &str = "/arcadia/authenticators/{id}";
+pub const ARCADIA_AUTHENTICATOR_ORDER: &str = "/arcadia/authenticators/order";
+pub const ARCADIA_AUTHENTICATOR_CODES: &str = "/arcadia/authenticator-codes";
+pub const ARCADIA_VAULT_ENTRIES: &str = "/arcadia/vault/entries";
+pub const ARCADIA_VAULT_ENTRY: &str = "/arcadia/vault/entries/{id}";
+pub const ARCADIA_VAULT_ENTRY_PASSWORD: &str = "/arcadia/vault/entries/{id}/password";
+pub const ARCADIA_VAULT_ENTRY_ORDER: &str = "/arcadia/vault/entries/order";
+pub const ARCADIA_CARD_ENTRIES: &str = "/arcadia/cards/entries";
+pub const ARCADIA_CARD_ENTRY: &str = "/arcadia/cards/entries/{id}";
+pub const ARCADIA_CARD_ENTRY_NUMBER: &str = "/arcadia/cards/entries/{id}/number";
+pub const ARCADIA_CARD_ENTRY_CVC: &str = "/arcadia/cards/entries/{id}/cvc";
+pub const ARCADIA_CARD_ENTRY_ORDER: &str = "/arcadia/cards/entries/order";
