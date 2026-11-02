@@ -2,7 +2,7 @@
 
 Arcadia is a self-contained Google Cloud application for authenticator codes,
 passwords, and cards. The repository contains the Svelte frontend and the Rust
-API. Its only infrastructure dependency is the public [`komputation/arche`](https://github.com/khoek/arche)
+API. Its only infrastructure dependency is the public [`khoek/arche`](https://github.com/khoek/arche)
 repository; it does not depend on private `vates`, `occultum`, `rete`, `aegis`,
 or `caudex` checkouts.
 

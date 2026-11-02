@@ -19,7 +19,7 @@ edition = "2024"
 authors = ["Arcadia contributors"]
 license = "AGPL-3.0-only"
 publish = false
-repository = "https://github.com/komputation/arcadia"
+repository = "https://github.com/khoek/arcadia"
 
 [workspace.dependencies]
 arche-firestore = { git = "https://github.com/khoek/arche.git", tag = "v0.1.0" }
