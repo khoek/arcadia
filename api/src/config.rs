@@ -17,7 +17,7 @@ pub struct ArcadiaSessionConfig {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ArcadiaConfig {
-    pub origin: Url,
+    pub origins: Vec<Url>,
     pub session: ArcadiaSessionConfig,
 }
 
@@ -28,14 +28,19 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn require(self) -> anyhow::Result<Self> {
-        if self.arcadia.origin.scheme() != "https"
-            || self.arcadia.origin.host_str().is_none()
-            || self.arcadia.origin.path() != "/"
-            || self.arcadia.origin.query().is_some()
-            || self.arcadia.origin.fragment().is_some()
+        if self.arcadia.origins.is_empty()
+            || self.arcadia.origins.iter().any(|origin| {
+                origin.scheme() != "https"
+                    || origin.host_str().is_none()
+                    || !origin.username().is_empty()
+                    || origin.password().is_some()
+                    || origin.path() != "/"
+                    || origin.query().is_some()
+                    || origin.fragment().is_some()
+            })
         {
             anyhow::bail!(
-                "arcadia.origin must be an HTTPS origin without a path, query, or fragment"
+                "arcadia.origins must contain HTTPS origins without credentials, paths, queries, or fragments"
             );
         }
         if self.arcadia.session.pepper.len() < 32 {

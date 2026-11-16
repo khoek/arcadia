@@ -14,7 +14,7 @@ const CONFIG_BOOTSTRAP_MAX_RETRIES: usize = 8;
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 struct StoredArcadiaConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    origin: Option<String>,
+    origins: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     session: Option<StoredSessionConfig>,
 }
@@ -45,12 +45,17 @@ pub async fn load_config(db: &Db) -> anyhow::Result<AppConfig> {
 
 fn validate_arcadia_config(stored: StoredArcadiaConfig) -> anyhow::Result<ArcadiaConfig> {
     let session = stored.session.unwrap_or_default();
-    let origin = normalized_text(stored.origin.as_ref())
-        .ok_or_else(|| anyhow::anyhow!("v2/arcadia.origin is required"))?;
     let pepper = normalized_text(session.pepper.as_ref())
         .ok_or_else(|| anyhow::anyhow!("v2/arcadia.session.pepper is required"))?;
     Ok(ArcadiaConfig {
-        origin: Url::parse(origin).context("v2/arcadia.origin must be a valid URL")?,
+        origins: stored
+            .origins
+            .context("v2/arcadia.origins is required")?
+            .iter()
+            .map(|origin| {
+                Url::parse(origin.trim()).context("v2/arcadia.origins must contain valid URLs")
+            })
+            .collect::<Result<_, _>>()?,
         session: ArcadiaSessionConfig {
             pepper: pepper.to_string(),
             absolute_ttl_seconds: session.absolute_ttl_seconds.unwrap_or(43_200),
@@ -72,7 +77,7 @@ pub async fn bootstrap_config(db: &Db) -> anyhow::Result<()> {
             return Ok(());
         }
         let stored = StoredArcadiaConfig {
-            origin: Some("https://arcadia.example.invalid".into()),
+            origins: Some(vec!["https://arcadia.example.invalid".into()]),
             session: Some(StoredSessionConfig {
                 pepper: Some(crate::util::random_urlsafe_string(64)),
                 absolute_ttl_seconds: Some(43_200),
@@ -148,14 +153,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn arcadia_config_requires_https_origin() {
+    fn arcadia_config_requires_explicit_https_origins() {
         let stored = StoredArcadiaConfig {
-            origin: Some("http://arcadia.example.invalid".into()),
+            origins: Some(vec![
+                "https://arcadia.example.invalid".into(),
+                "https://dash.example.invalid".into(),
+            ]),
             session: Some(StoredSessionConfig {
                 pepper: Some("x".repeat(64)),
                 ..Default::default()
             }),
         };
-        assert!(validate_arcadia_config(stored).is_ok());
+        let validate = |stored| {
+            AppConfig {
+                arcadia: validate_arcadia_config(stored)?,
+            }
+            .require()
+        };
+        assert_eq!(validate(stored.clone()).unwrap().arcadia.origins.len(), 2);
+        for invalid in [
+            None,
+            Some(vec![]),
+            Some(vec!["".into()]),
+            Some(vec!["http://arcadia.example.invalid".into()]),
+            Some(vec!["https://user:password@arcadia.example.invalid".into()]),
+            Some(vec!["https://arcadia.example.invalid/vault".into()]),
+            Some(vec!["https://arcadia.example.invalid/?query=1".into()]),
+            Some(vec!["https://arcadia.example.invalid/#fragment".into()]),
+        ] {
+            assert!(
+                validate(StoredArcadiaConfig {
+                    origins: invalid,
+                    ..stored.clone()
+                })
+                .is_err()
+            );
+        }
     }
 }

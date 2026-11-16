@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { CheckCircle2, CircleAlert, Info, X } from '@lucide/svelte';
 
 	import type {
@@ -12,33 +12,38 @@
 	}
 
 	let { notifications }: Props = $props();
-	let host = $state<HTMLDialogElement>();
-	let mounted = $state(false);
-	let shownNewestNotice = 0;
+	let host = $state<HTMLDivElement>();
+	let container = $state<Element>();
 
 	$effect(() => {
-		if (!mounted || !host) return;
-		const newestNotice = notifications.notices.at(-1)?.id ?? 0;
-		if (newestNotice === 0) {
-			shownNewestNotice = 0;
-			if (host.open) host.close();
-			return;
+		if (!host || !container) return;
+		if (host.parentElement !== container) {
+			host.hidePopover();
+			container.append(host);
 		}
-		if (!host.open) host.show();
-		else if (shownNewestNotice !== newestNotice) {
-			host.close();
-			host.show();
-		}
-		shownNewestNotice = newestNotice;
+		host.togglePopover(notifications.notices.length > 0);
 	});
 
 	onMount(() => {
-		mounted = true;
-	});
-
-	onDestroy(() => {
-		if (host?.open) host.close();
-		notifications.destroy();
+		const home = host!.parentElement!;
+		const syncContainer = (): void => {
+			// Modal descendants remain interactive and exposed to assistive technology.
+			container = document.querySelector('dialog:modal') ?? home;
+		};
+		const observer = new MutationObserver(syncContainer);
+		observer.observe(document.body, {
+			attributes: true,
+			attributeFilter: ['open'],
+			childList: true,
+			subtree: true,
+		});
+		syncContainer();
+		return () => {
+			observer.disconnect();
+			host!.hidePopover();
+			home.append(host!);
+			notifications.destroy();
+		};
 	});
 
 	function iconFor(kind: ArcadiaNoticeKind) {
@@ -50,7 +55,13 @@
 	}
 </script>
 
-<dialog bind:this={host} class="notice-host" aria-label="Notifications">
+<div
+	bind:this={host}
+	class="notice-host"
+	popover="manual"
+	role="region"
+	aria-label="Notifications"
+>
 	{#if notifications.notices.length > 0}
 		{#each notifications.notices as notice (notice.id)}
 			{@const Icon = iconFor(notice.kind)}
@@ -81,16 +92,14 @@
 			</div>
 		{/each}
 	{/if}
-</dialog>
+</div>
 
 <style>
 	.notice-host {
 		position: fixed;
 		inset: auto;
-		z-index: 100;
 		bottom: calc(1.25rem + env(safe-area-inset-bottom));
 		left: 50%;
-		display: grid;
 		width: min(28rem, calc(100vw - 2rem));
 		max-width: none;
 		gap: 0.6rem;
@@ -102,6 +111,10 @@
 		padding: 0;
 		transform: translateX(-50%);
 		pointer-events: none;
+	}
+
+	.notice-host:popover-open {
+		display: grid;
 	}
 
 	.notice-host::backdrop {

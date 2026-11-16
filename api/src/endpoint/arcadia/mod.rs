@@ -25,8 +25,8 @@ use axum::{
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{collections::BTreeMap, time::Duration};
-use tower_http::cors::CorsLayer;
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 const QR_BODY_LIMIT_BYTES: usize = 9 * 1024 * 1024;
 const MAX_NOTES_BYTES: usize = 50 * 1024;
@@ -35,7 +35,7 @@ const MAX_NOTES_BYTES: usize = 50 * 1024;
 pub struct ArcadiaState {
     pub(super) db: Db,
     pub(super) databases: ArcadiaDatabases,
-    origin_header: HeaderValue,
+    origin_headers: Arc<[HeaderValue]>,
     iap: Option<iap::ArcadiaIapAuth>,
 }
 
@@ -45,11 +45,14 @@ impl ArcadiaState {
         config: ArcadiaConfig,
         iap: Option<iap::ArcadiaIapAuth>,
     ) -> anyhow::Result<Self> {
-        let origin_header = HeaderValue::from_str(&config.origin.origin().ascii_serialization())?;
         Ok(Self {
             db,
             databases: ARCADIA_DATABASES,
-            origin_header,
+            origin_headers: config
+                .origins
+                .iter()
+                .map(|origin| HeaderValue::from_str(&origin.origin().ascii_serialization()))
+                .collect::<Result<_, _>>()?,
             iap,
         })
     }
@@ -91,7 +94,7 @@ impl ArcadiaState {
 
 pub fn router(state: ArcadiaState) -> Router {
     let cors = CorsLayer::new()
-        .allow_origin(state.origin_header.clone())
+        .allow_origin(AllowOrigin::list(state.origin_headers.iter().cloned()))
         .allow_credentials(true)
         .allow_headers([CONTENT_TYPE])
         .allow_methods([
@@ -159,7 +162,7 @@ pub fn router(state: ArcadiaState) -> Router {
         .route(path::ARCADIA_CARD_ENTRY_CVC, get(cards::get_entry_cvc))
         .layer(cors)
         .layer(middleware::from_fn_with_state(
-            state.clone(),
+            state.origin_headers.clone(),
             enforce_origin,
         ))
         .with_state(state)
@@ -207,15 +210,24 @@ async fn get_session(user: ArcadiaUser) -> Json<ArcadiaSessionResponse> {
 }
 
 async fn enforce_origin(
-    State(state): State<ArcadiaState>,
+    State(origins): State<Arc<[HeaderValue]>>,
     request: Request,
     next: Next,
 ) -> Result<Response, ApiError> {
     if matches!(
         *request.method(),
         Method::POST | Method::PUT | Method::PATCH | Method::DELETE
-    ) && request.headers().get(ORIGIN) != Some(&state.origin_header)
+    ) && !request
+        .headers()
+        .get(ORIGIN)
+        .is_some_and(|origin| origins.contains(origin))
     {
+        tracing::warn!(
+            method = %request.method(),
+            origin = ?request.headers().get(ORIGIN),
+            allowed_origins = ?origins,
+            "Arcadia request origin rejected"
+        );
         return Err(ApiError::Forbidden("request origin is not allowed".into()));
     }
     Ok(next.run(request).await)
@@ -356,7 +368,85 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::validate_icon_image;
+    use super::{enforce_origin, validate_icon_image};
+    use axum::{
+        Router,
+        body::Body,
+        http::{HeaderValue, Method, Request, StatusCode, header::ORIGIN},
+        middleware,
+        routing::any,
+    };
+    use std::sync::Arc;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn mutations_accept_each_configured_origin_and_reject_other_origins() {
+        let app = Router::new()
+            .route(
+                "/vault/entries/entry",
+                any(|| async { StatusCode::NO_CONTENT }),
+            )
+            .layer(middleware::from_fn_with_state(
+                Arc::<[HeaderValue]>::from([
+                    HeaderValue::from_static("https://arcadia.example.invalid"),
+                    HeaderValue::from_static("https://dash.example.invalid"),
+                ]),
+                enforce_origin,
+            ));
+        for method in [Method::POST, Method::PUT, Method::PATCH, Method::DELETE] {
+            for (origin, expected) in [
+                (
+                    Some("https://arcadia.example.invalid"),
+                    StatusCode::NO_CONTENT,
+                ),
+                (Some("https://dash.example.invalid"), StatusCode::NO_CONTENT),
+                (Some("https://evil.example.invalid"), StatusCode::FORBIDDEN),
+                (
+                    Some("https://dash.example.invalid.evil.test"),
+                    StatusCode::FORBIDDEN,
+                ),
+                (Some("http://dash.example.invalid"), StatusCode::FORBIDDEN),
+                (
+                    Some("https://dash.example.invalid:8443"),
+                    StatusCode::FORBIDDEN,
+                ),
+                (Some("null"), StatusCode::FORBIDDEN),
+                (None, StatusCode::FORBIDDEN),
+            ] {
+                let mut request = Request::builder()
+                    .method(method.clone())
+                    .uri("/vault/entries/entry");
+                if let Some(origin) = origin {
+                    request = request.header(ORIGIN, origin);
+                }
+                assert_eq!(
+                    app.clone()
+                        .oneshot(request.body(Body::empty()).unwrap())
+                        .await
+                        .unwrap()
+                        .status(),
+                    expected,
+                    "{method} from {origin:?}"
+                );
+            }
+        }
+        for method in [Method::GET, Method::HEAD, Method::OPTIONS] {
+            assert_eq!(
+                app.clone()
+                    .oneshot(
+                        Request::builder()
+                            .method(method)
+                            .uri("/vault/entries/entry")
+                            .body(Body::empty())
+                            .unwrap()
+                    )
+                    .await
+                    .unwrap()
+                    .status(),
+                StatusCode::NO_CONTENT
+            );
+        }
+    }
 
     #[test]
     fn icons_require_small_raster_data_urls() {

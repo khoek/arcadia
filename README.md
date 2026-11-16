@@ -44,8 +44,8 @@ path such as `/arcadia`, set `PUBLIC_ARCADIA_BASE=/arcadia` before building and
 route that prefix to the Firebase or Cloud Storage frontend. The API remains at
 `/v2/arcadia/*` on the same host.
 
-Create the Firestore `v2/arcadia` configuration document with an HTTPS
-`origin` and a random `session.pepper`, plus a `v2/auth/users/<id>` document
+Create the Firestore `v2/arcadia` configuration document with a nonempty array of
+HTTPS `origins` and a random `session.pepper`, plus a `v2/auth/users/<id>` document
 containing `id`, `email`, `disabled: false`, and `session_version: 0`. The
 Each admitted IAP email needs one `v2/auth/users/<id>` document with the same
 `email` value. Document IDs are instance-local and may be chosen by the
@@ -71,3 +71,10 @@ firebase deploy --only hosting:SITE_ID
 
 The public repository deliberately leaves project IDs, domains, IAP audiences,
 user IDs, OAuth client material, and Firestore data to the deployer.
+
+List every frontend origin routed to this API in `v2/arcadia.origins`, for
+example `["https://vault.example.com", "https://dash.example.com"]`. CORS and
+mutation checks use this same allowlist. When upgrading a deployment using the
+singular `origin` field, explicitly copy its value into `origins`, add the other
+frontend origins, deploy the API, and delete `origin`. Existing API instances
+retain their loaded configuration until restarted.
